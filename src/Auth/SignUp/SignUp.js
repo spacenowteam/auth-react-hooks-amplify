@@ -1,99 +1,77 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import './SignUp.css';
 
-import { Auth, Logger } from 'aws-amplify';
+import { CHANGE_SCREEN } from '../../context/actions/auth'
+import { useAuth } from '../../context/providers/AuthProvider'
+import { userSignUp } from '../../context/services/auth';
 
-const logger = new Logger('Sign Up');
+const SignUp = props =>  {
 
-class SignUp extends Component {
-  
-  constructor(props) {
-    super(props);
-    this.signUp = this.signUp.bind(this);
-    this.changeState = this.changeState.bind(this);
-    this.inputs = {};
-    this.state = { error: '' }
+  const [auth, dispatch] = useAuth();
+
+  const [_signUp, _setSignUp] = useState({
+    username: "",
+    password: "",
+    email: "",
+    phone_number: ""
+  });
+
+  const signUp = async () => {
+    await userSignUp(_signUp)(dispatch)
+    console.log("SIGN UP ===> USER_CONFIRM_SIGN_UP")
+    changeScreen(`CONFIRM_SIGN_UP`)
   }
 
-  changeState(state, data) {
-    const { onStateChange } = this.props;
-    if (onStateChange) {
-      onStateChange(state, data);
-    }
+  const changeScreen = (_screen) => {
+    dispatch({ type: CHANGE_SCREEN, payload: _screen })
   }
 
-  signUp() {
-    const { username, password, email, phone_number } = this.inputs;
-    logger.info('sign up with ' + username);
-    Auth.signUp(username, password, email, phone_number)
-      .then(() => this.signUpSuccess(username))
-      .catch(err => this.signUpError(err));
-  }
+  return (
 
-  signUpSuccess(username) {
-    logger.info('sign up success with ' + username);
-    this.setState({ error: '' });
-    this.changeState('confirmSignUp', username);
-  }
+    (auth.screen === 'SIGN_UP') ?
 
-  signUpError(err) {
-    logger.info('sign up error', err);
-    let message = err.message || err;
-    if (message.startsWith('Invalid phone number')) {
-      message = 'Phone numbers must follow these formatting rules: A phone number must start with a plus (+) sign, followed immediately by the country code. A phone number can only contain the + sign and digits. You must remove any other characters from a phone number, such as parentheses, spaces, or dashes (-) before submitting the value to the service. For example, a United States-based phone number must follow this format: +14325551212.'
-    }
-    this.setState({ error: message });
-  }
-
-  render() {
-
-    const { authState } = this.props;
-    const { error } = this.state;
-
-    if (authState !== 'signUp') { return null; }
-
-    return (
       <div className={`container`}>
-        <h1>{this.props.title}</h1>
-          <div className={`form-group`}>
-            <label className={`form-check-label`}>Username</label>
-            <input className={`form-control`} type="text" placeholder="Username" onChange={event => this.inputs.username = event.target.value} autoFocus />
-          </div>
+        <h1>{props.title}</h1>
+        <div className={`form-group`}>
+          <label className={`form-check-label`}>Username</label>
+          <input className={`form-control`} type="text" placeholder="Username" defaultValue={ _signUp.username || '' } onChange={e => _setSignUp({ ..._signUp, username: e.target.value })} autoFocus />
+        </div>
 
-          <div className={`form-group`}>
-            <label className={`form-check-label`}>Password</label>
-            <input className={`form-control`} type="password" placeholder="Password" onChange={event => this.inputs.password = event.target.value} autoFocus />
-          </div>
+        <div className={`form-group`}>
+          <label className={`form-check-label`}>Password</label>
+          <input className={`form-control`} type="password" placeholder="Password" defaultValue={ _signUp.password || '' } onChange={e => _setSignUp({ ..._signUp, password: e.target.value })} autoFocus />
+        </div>
 
-          <div className={`form-group`}>
-            <label className={`form-check-label`}>Email</label>
-            <input className={`form-control`} type="email" placeholder="Email address" onChange={event => this.inputs.email = event.target.value} autoFocus />
-          </div>
+        <div className={`form-group`}>
+          <label className={`form-check-label`}>Email</label>
+          <input className={`form-control`} type="email" placeholder="Email address" defaultValue={ _signUp.email || '' } onChange={e => _setSignUp({ ..._signUp, email: e.target.value })} autoFocus />
+        </div>
 
-          <div className={`form-group`}>
-            <label className={`form-check-label`}>Phone</label>
-            <input className={`form-control`} type="tel" placeholder="Phone number" onChange={event => this.inputs.phone_number = event.target.value} autoFocus />
-          </div>
+        <div className={`form-group`}>
+          <label className={`form-check-label`}>Phone</label>
+          <input className={`form-control`} type="tel" placeholder="Phone number" defaultValue={ _signUp.phone_number || '' } onChange={e => _setSignUp({ ..._signUp, phone_number: e.target.value })} autoFocus />
+        </div>
 
-          <div className="form-row">
-            <div className="col">
-              <button className={`btn btn-primary`} onClick={() => this.changeState('signIn')}>
-                Back to sign in
-              </button>
-            </div>
-            <div className="col">
-              <button className={`btn btn-primary`} onClick={() => this.changeState('confirmSignUp')}>
-                Confirm a code
-              </button>
-            </div>
+        <div className="form-row">
+          <div className="col">
+            <button className={`btn btn-primary`} onClick={() => changeScreen("SIGN_IN")}>
+              Back to sign in
+            </button>
           </div>
-          <button className={`btn btn-primary`} onClick={this.signUp}>
-            Create account
-          </button>
-          { error && <div className="alert alert-danger" role="alert">{error}</div> }
+          <div className="col">
+            <button className={`btn btn-primary`} onClick={() => changeScreen("CONFIRM_SIGN_UP")}>
+              Confirm a code
+            </button>
+          </div>
+        </div>
+        <button className={`btn btn-primary`} onClick={signUp}>
+          Create account
+        </button>
+        { auth.error && <div className="alert alert-danger" role="alert">{auth.error}</div> }
       </div>
-    );
-  }
+
+    : null
+  )
 }
 
 export default SignUp;

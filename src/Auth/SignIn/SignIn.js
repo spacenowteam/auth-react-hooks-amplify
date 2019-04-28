@@ -1,45 +1,67 @@
 import React, { useState } from 'react';
 import './SignIn.css';
 
+import { CHANGE_SCREEN } from '../../context/actions/auth'
+import { useAuth } from '../../context/providers/AuthProvider'
+import { userSignIn } from '../../context/services/auth';
+
+
 const SignIn = props => {
+
+  const [auth, dispatch] = useAuth();
   
-  const [_login, _setLogin] = useState({
+  const [_signIn, _setSignIn] = useState({
     email: "",
     password: ""
   });
 
-  const signIn = () => {
-    console.log('Sign in', _login)
+  const signIn = async () => {
+    await userSignIn(_signIn)(dispatch)
+    changeScreen(`CONFIRM_SIGN_IN`)
+  }
+
+  const changeScreen = (_screen) => {
+    dispatch({ type: CHANGE_SCREEN, payload: _screen })
   }
 
   return (
+    
+    (auth.screen === 'SIGN_IN') ?
+
     <div className={`container`}>
+      <h1>{props.title}</h1>
       <div className={`formGroup form-group`}>
         <label className={`label`}>Username or email address</label>
-        <input className={`input form-control`} type="text" name={`username`} placeholder="Username or email address" defaultValue={ _login.email || '' } onChange={e => _setLogin({ ..._login, email: e.target.value })} autoFocus />
+        <input className={`input form-control`} type="text" name={`username`} placeholder="Username or email address" defaultValue={ _signIn.email || '' } onChange={e => _setSignIn({ ..._signIn, email: e.target.value })} autoFocus />
       </div>
       <div className={`formGroup form-group`}>
         <label className={`label`}>Password</label>
-        <input className={`input form-control`} type="password" name={`password`} placeholder="Password" onChange={e => _setLogin({ ..._login, password: e.target.value })} autoFocus />
+        <input className={`input form-control`} type="password" name={`password`} placeholder="Password" onChange={e => _setSignIn({ ..._signIn, password: e.target.value })} autoFocus />
       </div>
       <div className="form-row">
         <div className="col">
           New to us?{' '}
-          <button className={`btn btn-primary`} onClick={() => this.changeState('signUp')}>
+          <button className={`btn btn-primary`} onClick={() => changeScreen('SIGN_UP')}>
             Sign Up
           </button>
         </div>
         <div className="col">
-          <button className={`btn btn-primary`} onClick={() => this.changeState('forgotPassword')}>
+          <button className={`btn btn-primary`} onClick={() => changeScreen('FORGOT_PASSWORD')}>
             Forgot Password
+          </button>
+        </div>
+        <div className="col">
+          <button className={`btn btn-primary`} onClick={() => changeScreen('CONFIRM_SIGN_IN')}>
+            Confirm Sign In
           </button>
         </div>
       </div>
       <button className={`btn btn-primary`} onClick={signIn}>
         Sign in
       </button>
-      {/* { error && <div className={`alert alert-danger`} role="alert">{error}</div>} */}
+      { auth.error && <div className={`alert alert-danger`} role="alert">{auth.error}</div>}
     </div>
+    : null
   )
 
 }
